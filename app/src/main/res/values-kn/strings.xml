@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Pocket QC</string>
+    <string name="tagline">ಆಹಾರ ಸುರಕ್ಷತೆಗಾಗಿ ಸಾಧನದಲ್ಲಿನ AI</string>
+    <string name="select_mode">ಪರಿಶೀಲನಾ ಮೋಡ್ ಆಯ್ಕೆಮಾಡಿ</string>
+    <string name="select_mode_desc">ಗುಣಮಟ್ಟ ಪರಿಶೀಲನೆ ಆರಂಭಿಸಲು ಮಾಡ್ಯೂಲ್ ಆಯ್ಕೆಮಾಡಿ.</string>
+    <string name="mode_2d">2D ದೋಷ ವಿಂಗಡಣೆ</string>
+    <string name="mode_uv">UV ಫ್ಲೋರೊಸೆನ್ಸ್ ಸ್ಕ್ಯಾನ್</string>
+    <string name="mode_3d">3D ಪರಿಮಾಣ ಪರಿಶೀಲನೆ</string>
+    <string name="start_batch">ಬ್ಯಾಚ್ ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="stop_batch">ಬ್ಯಾಚ್ ನಿಲ್ಲಿಸಿ</string>
+    <string name="start_inspection">ಪರಿಶೀಲನೆ ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="view_history">ಬ್ಯಾಚ್ ಲಾಗ್‌ಗಳು &amp; ಇತಿಹಾಸ ನೋಡಿ</string>
+    <string name="total_inspected">ಒಟ್ಟು ಪರಿಶೀಲಿಸಲಾಗಿದೆ</string>
+    <string name="passed">ಉತ್ತೀರ್ಣ</string>
+    <string name="defective">ದೋಷಯುಕ್ತ</string>
+    <string name="defect_rate">ದೋಷದ ಪ್ರಮಾಣ</string>
+    <string name="settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="theme">ಥೀಮ್</string>
+    <string name="language">ಅಪ್ಲಿಕೇಶನ್ ಭಾಷೆ</string>
+    <string name="tts">ಧ್ವನಿ ಪ್ರಕಟಣೆ (TTS)</string>
+    <string name="scan_qr_prompt">ಬ್ಯಾಚ್ ಸಮಗ್ರತೆಯನ್ನು ಪರಿಶೀಲಿಸಲು Google Lens ಅಥವಾ ಸ್ಕ್ಯಾನರ್ ಬಳಸಿ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ</string>
+</resources>

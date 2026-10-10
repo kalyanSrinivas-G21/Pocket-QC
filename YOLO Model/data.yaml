@@ -1,0 +1,12 @@
+path: C:/Users/gurug/Pocket QC/YOLO Model
+
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 3
+
+names:
+  0: Broken
+  1: Fracture
+  2: Intact

@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Pocket QC</string>
+    <string name="tagline">ఆహార భద్రత కోసం పరికరంలో AI</string>
+    <string name="select_mode">తనిఖీ విధానాన్ని ఎంచుకోండి</string>
+    <string name="select_mode_desc">నాణ్యతా తనిఖీని ప్రారంభించడానికి ఒక మాడ్యూల్‌ను ఎంచుకోండి.</string>
+    <string name="mode_2d">2D లోప క్రమబద్ధీకరణ</string>
+    <string name="mode_uv">UV ఫ్లోరోసెన్స్ స్కాన్</string>
+    <string name="mode_3d">3D వాల్యూమ్ తనిఖీ</string>
+    <string name="start_batch">బ్యాచ్ ప్రారంభించండి</string>
+    <string name="stop_batch">బ్యాచ్ ఆపండి</string>
+    <string name="start_inspection">తనిఖీ ప్రారంభించండి</string>
+    <string name="view_history">బ్యాచ్ లాగ్‌లు &amp; చరిత్ర చూడండి</string>
+    <string name="total_inspected">మొత్తం తనిఖీ చేసినవి</string>
+    <string name="passed">ఉత్తీర్ణమైనవి</string>
+    <string name="defective">లోపభూయిష్టమైనవి</string>
+    <string name="defect_rate">లోపం శాతం</string>
+    <string name="settings">సెట్టింగ్‌లు</string>
+    <string name="theme">థీమ్</string>
+    <string name="language">అప్లికేషన్ భాష</string>
+    <string name="tts">వాయిస్ అనౌన్స్‌మెంట్ (TTS)</string>
+    <string name="scan_qr_prompt">బ్యాచ్ సమగ్రతను తనిఖీ చేయడానికి ఆఫ్‌లైన్ రీడర్ లేదా గూగుల్ లెన్స్‌తో స్కాన్ చేయండి</string>
+</resources>
