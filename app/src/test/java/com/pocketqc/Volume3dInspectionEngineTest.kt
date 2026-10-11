@@ -109,4 +109,29 @@ class Volume3dInspectionEngineTest {
         assertEquals(Volume3dPhase.IDLE, engine.state.value.phase)
         assertEquals(0, engine.state.value.totalInspected)
     }
+
+    @Test
+    fun testSettingFillLevelAfterBatchCompleted() = runBlocking {
+        val mockManager = MockBatchManager()
+        val engine = Volume3dInspectionEngine(
+            volumeAnalyzer = MockVolumeAnalyzer(),
+            batchManager = mockManager,
+            scope = CoroutineScope(Dispatchers.Default),
+            interBottleWaitSeconds = 0
+        )
+
+        engine.startBatch(requiredFillPercent = 80f)
+        val completed = engine.stopBatch()
+        assertEquals(Volume3dPhase.COMPLETED, engine.state.value.phase)
+
+        // Setting required fill level after batch completed should work and reset phase to IDLE
+        engine.setRequiredFillLevel(70f)
+        assertEquals(70f, engine.state.value.requiredFillPercent, 0.001f)
+        assertEquals(Volume3dPhase.IDLE, engine.state.value.phase)
+
+        // Adjusting container width after batch completed should also work
+        engine.setContainerWidthPercent(65f)
+        assertEquals(65f, engine.state.value.selectedProfile.containerWidthPercent, 0.001f)
+        assertEquals(Volume3dPhase.IDLE, engine.state.value.phase)
+    }
 }

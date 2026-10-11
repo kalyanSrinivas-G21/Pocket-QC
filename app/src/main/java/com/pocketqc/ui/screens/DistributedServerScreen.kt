@@ -89,8 +89,8 @@ fun DistributedServerScreen(
     val lastCompletedBatch by serverManager.lastCompletedBatch.collectAsState()
 
     var showCreateBatchDialog by remember { mutableStateOf(false) }
-    var newBatchLotName by remember { mutableStateOf("Biscuit Lot #101") }
-    var newBatchMode by remember { mutableStateOf("2D_DEFECT_SORT") }
+    var newBatchLotName by remember { mutableStateOf("Combined QC Lot #101") }
+    var newBatchMode by remember { mutableStateOf("COMBINED_INSPECTION") }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
 
     val connectionUrl = "http://$serverIp:$serverPort"
@@ -338,10 +338,16 @@ fun DistributedServerScreen(
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
                             )
+                            val modeDesc = when (activeBatch?.inspectionMode) {
+                                "COMBINED_INSPECTION", "COMBINED_2D_3D", "MULTI_STATION_QC" -> "Multi-Station Network (2D Defect + 3D Volume)"
+                                "VOLUME_CHECK_3D" -> "3D Volume Inspection"
+                                "UV_AFLATOXIN" -> "UV Aflatoxin Screening"
+                                else -> "2D Defect Sort"
+                            }
                             Text(
-                                text = "Product: ${activeBatch?.productName}",
+                                text = "Lot: ${activeBatch?.productName} · $modeDesc",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextGrey
+                                color = BrandBlueLight
                             )
                         }
 
@@ -636,39 +642,190 @@ fun DistributedServerScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Class breakdown & per-device contribution
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(CardSurfaceDark)
-                    .border(1.dp, CardSurfaceBorder, RoundedCornerShape(14.dp))
-                    .padding(14.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Defect Classes: Broken: ${summary.brokenCount} · Fracture: ${summary.fractureCount} · Intact: ${summary.intactCount}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextGrey,
-                        fontSize = 12.sp
-                    )
-
-                    if (summary.deviceCounts.isNotEmpty()) {
-                        Divider(color = CardSurfaceBorder, thickness = 1.dp)
-                        Text(
-                            text = "Station Contributions:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = BrandBlueLight,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        summary.deviceCounts.forEach { (stn, cnt) ->
-                            val defects = summary.deviceDefectCounts[stn] ?: 0
+            // Multi-Station Streams & Breakdown
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Stream 1: 2D Biscuit Defect Sort Stream
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(CardSurfaceDark)
+                        .border(1.dp, CardSurfaceBorder, RoundedCornerShape(14.dp))
+                        .padding(14.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = "• $stn: $cnt items inspected ($defects defects)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextWhite,
-                                fontSize = 12.sp
+                                text = "🔍 STATION 1: 2D BISCUIT DEFECT SORT",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = BrandBlueLight,
+                                fontWeight = FontWeight.Bold
                             )
+                            Text(
+                                text = "${summary.count2dTotal} units",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextWhite,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "✓ Intact: ${summary.intactCount}",
+                                color = StatusPass,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "✗ Broken: ${summary.brokenCount}",
+                                color = if (summary.brokenCount > 0) StatusFail else TextGrey,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "⚠ Fracture: ${summary.fractureCount}",
+                                color = if (summary.fractureCount > 0) Color(0xFFFBBF24) else TextGrey,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        val d2dRate = if (summary.count2dTotal > 0) (summary.count2dDefect.toFloat() / summary.count2dTotal.toFloat()) * 100f else 0f
+                        Text(
+                            text = "2D Defect Rate: ${String.format(Locale.US, "%.1f", d2dRate)}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (d2dRate <= 12f) StatusPass else StatusFail,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                // Stream 2: 3D Volume & Fill Check Stream
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(CardSurfaceDark)
+                        .border(1.dp, CardSurfaceBorder, RoundedCornerShape(14.dp))
+                        .padding(14.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🧪 STATION 2: 3D VOLUME & FILL-LEVEL",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF26B6FF),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${summary.count3dTotal} bottles",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextWhite,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "✓ In Tolerance: ${summary.count3dPass}",
+                                color = StatusPass,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "✗ Out of Tolerance: ${summary.count3dDefect}",
+                                color = if (summary.count3dDefect > 0) StatusFail else TextGrey,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (summary.count3dInconclusive > 0) {
+                                Text(
+                                    text = "⚠ Inconclusive: ${summary.count3dInconclusive}",
+                                    color = Color(0xFFFBBF24),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        val p3dRate = if (summary.count3dTotal > 0) (summary.count3dPass.toFloat() / summary.count3dTotal.toFloat()) * 100f else 0f
+                        Text(
+                            text = "3D Pass Rate: ${String.format(Locale.US, "%.1f", p3dRate)}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (p3dRate >= 88f) StatusPass else Color(0xFFFBBF24),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                // Station Contributions
+                if (summary.deviceCounts.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(CardSurfaceDark)
+                            .border(1.dp, CardSurfaceBorder, RoundedCornerShape(14.dp))
+                            .padding(14.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "STATION NODE CONTRIBUTIONS:",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = BrandBlueLight,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                            summary.deviceCounts.forEach { (stn, cnt) ->
+                                val defects = summary.deviceDefectCounts[stn] ?: 0
+                                val mode = summary.deviceModes[stn]?.let {
+                                    if (it.contains("VOLUME", ignoreCase = true) || it.contains("3D", ignoreCase = true)) "3D Volume"
+                                    else if (it.contains("UV", ignoreCase = true)) "UV Scan"
+                                    else "2D Defect"
+                                } ?: "Node"
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(Color(0xFF1E2838))
+                                                .border(1.dp, BrandBlueLight.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(text = mode, color = BrandBlueLight, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                        Text(text = stn, style = MaterialTheme.typography.bodySmall, color = TextWhite, fontWeight = FontWeight.SemiBold)
+                                    }
+
+                                    Text(
+                                        text = "$cnt items · $defects def",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (defects > 0) StatusFail else StatusPass,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -704,7 +861,7 @@ fun DistributedServerScreen(
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(CardSurfaceDark)
                                 .border(1.dp, if (isDef) StatusFail.copy(alpha = 0.3f) else CardSurfaceBorder, RoundedCornerShape(10.dp))
-                            .padding(10.dp)
+                                .padding(10.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -716,6 +873,20 @@ fun DistributedServerScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
+                                        val modeTag = when {
+                                            ev.inspectionMode.contains("VOLUME", ignoreCase = true) || ev.inspectionMode.contains("3D", ignoreCase = true) || ev.modelId.contains("fill", ignoreCase = true) -> "3D"
+                                            ev.inspectionMode.contains("UV", ignoreCase = true) -> "UV"
+                                            else -> "2D"
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(4.dp))
+                                                .background(if (modeTag == "3D") Color(0xFF0F2636) else Color(0xFF192538))
+                                                .border(1.dp, if (modeTag == "3D") Color(0xFF26B6FF) else BrandBlueLight, RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        ) {
+                                            Text(text = modeTag, color = if (modeTag == "3D") Color(0xFF26B6FF) else BrandBlueLight, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        }
                                         Text(
                                             text = ev.className,
                                             style = MaterialTheme.typography.titleSmall,
@@ -787,10 +958,16 @@ fun DistributedServerScreen(
                     )
 
                     Text(
-                        text = "Inspection Mode:",
+                        text = "Inspection Scope:",
                         color = TextWhite,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "Multi-Station Network: Station 1 inspects 2D biscuit defects, Station 2 inspects 3D bottle volume. Server collects, aggregates, and analyzes both streams simultaneously.",
+                        color = BrandBlueLight,
+                        fontSize = 11.sp
                     )
 
                     Row(
@@ -798,9 +975,10 @@ fun DistributedServerScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         listOf(
-                            "2D_DEFECT_SORT" to "2D Defect",
-                            "UV_AFLATOXIN" to "UV Scan",
-                            "VOLUME_CHECK_3D" to "3D Volume"
+                            "COMBINED_INSPECTION" to "Combined (2D + 3D)",
+                            "2D_DEFECT_SORT" to "2D Only",
+                            "VOLUME_CHECK_3D" to "3D Only",
+                            "UV_AFLATOXIN" to "UV Only"
                         ).forEach { (modeKey, modeLabel) ->
                             val isSel = newBatchMode == modeKey
                             Box(
@@ -810,14 +988,15 @@ fun DistributedServerScreen(
                                     .background(if (isSel) BrandBluePrimary else Color(0xFF1E2430))
                                     .border(1.dp, if (isSel) BrandBlueLight else CardSurfaceBorder, RoundedCornerShape(8.dp))
                                     .clickable { newBatchMode = modeKey }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 8.dp, horizontal = 2.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = modeLabel,
                                     color = if (isSel) TextWhite else TextGrey,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                             }
                         }
@@ -831,6 +1010,7 @@ fun DistributedServerScreen(
                             when (newBatchMode) {
                                 "UV_AFLATOXIN" -> "Chilli Lot #101"
                                 "VOLUME_CHECK_3D" -> "Bottle Lot #101"
+                                "COMBINED_INSPECTION" -> "Combined QC Lot #101"
                                 else -> "Biscuit Lot #101"
                             }
                         }

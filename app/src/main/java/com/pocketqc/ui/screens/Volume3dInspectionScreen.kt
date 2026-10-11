@@ -132,6 +132,9 @@ fun Volume3dInspectionScreen(
         if (cameraSource is CameraXCameraSource && !hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
+        if (volumeEngine.state.value.phase == Volume3dPhase.COMPLETED) {
+            volumeEngine.resetToIdle()
+        }
     }
 
     DisposableEffect(cameraSource) {

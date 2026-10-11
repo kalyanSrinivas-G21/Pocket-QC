@@ -26,6 +26,8 @@ data class Batch(
     // 3D mode specific breakdown
     val requiredFillPercent: Float = 0f,
     val averageDetectedFillPercent: Float = 0f,
+    val bottlePassCount: Int = 0,
+    val bottleFailCount: Int = 0,
     // Machine-readable QR payload
     val qrPayload: String = ""
 ) {

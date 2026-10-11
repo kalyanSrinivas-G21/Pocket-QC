@@ -960,8 +960,15 @@ fun DistributedNodeScreen(
                     .padding(12.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val localBreakdownText = if (selectedMode == InspectionMode.VOLUME_CHECK_3D) {
+                        "Local 3D Fill Breakdown: In Tolerance: ${uiState.localIntactCount} · Out of Tolerance: ${uiState.localBrokenCount}"
+                    } else if (selectedMode == InspectionMode.UV_AFLATOXIN) {
+                        "Local UV Breakdown: Passed: ${uiState.localIntactCount} · Flagged: ${uiState.localBrokenCount}"
+                    } else {
+                        "Local 2D Breakdown: Intact: ${uiState.localIntactCount} · Broken: ${uiState.localBrokenCount} · Fracture: ${uiState.localFractureCount}"
+                    }
                     Text(
-                        text = "Local Defect Breakdown: Broken: ${uiState.localBrokenCount} · Fracture: ${uiState.localFractureCount} · Intact: ${uiState.localIntactCount}",
+                        text = localBreakdownText,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextGrey,
                         fontSize = 11.sp

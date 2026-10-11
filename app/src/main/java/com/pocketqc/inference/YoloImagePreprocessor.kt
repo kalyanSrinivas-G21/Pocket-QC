@@ -26,6 +26,9 @@ data class PreprocessedBitmap(
  * - Reuse of persistent IntArray pixel buffer
  */
 object YoloImagePreprocessor {
+    // 256-entry lookup table precomputing (val * 1/255.0f) to avoid per-pixel float divisions
+    // Fits completely in CPU L1 data cache (1 KB).
+    private val BYTE_TO_FLOAT = FloatArray(256) { it * (1.0f / 255.0f) }
 
     /**
      * Preprocesses [bitmap] into letterbox tensor.
@@ -70,17 +73,20 @@ object YoloImagePreprocessor {
             val pixels = buffers.pixels
             buffers.letterboxBitmap.getPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight)
 
-            val floatBuffer = buffers.floatBuffer
-            floatBuffer.clear()
-
-            val inv255 = 1.0f / 255.0f
+            val inputFloats = buffers.inputFloatArray
+            val lut = BYTE_TO_FLOAT
+            val channel1 = channelSize
             val channel2 = 2 * channelSize
             for (i in 0 until channelSize) {
                 val pixel = pixels[i]
-                floatBuffer.put(i, (pixel shr 16 and 0xFF) * inv255)
-                floatBuffer.put(channelSize + i, (pixel shr 8 and 0xFF) * inv255)
-                floatBuffer.put(channel2 + i, (pixel and 0xFF) * inv255)
+                inputFloats[i] = lut[(pixel ushr 16) and 0xFF]
+                inputFloats[channel1 + i] = lut[(pixel ushr 8) and 0xFF]
+                inputFloats[channel2 + i] = lut[pixel and 0xFF]
             }
+
+            val floatBuffer = buffers.floatBuffer
+            floatBuffer.clear()
+            floatBuffer.put(inputFloats)
             floatBuffer.rewind()
 
             return PreprocessedBitmap(floatBuffer, letterboxInfo)
@@ -106,18 +112,21 @@ object YoloImagePreprocessor {
         letterboxedBitmap.getPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight)
         letterboxedBitmap.recycle()
 
-        val byteBuffer = ByteBuffer.allocateDirect(1 * 3 * channelSize * 4)
-            .order(ByteOrder.nativeOrder())
-        val floatBuffer = byteBuffer.asFloatBuffer()
-
-        val inv255 = 1.0f / 255.0f
+        val inputFloats = FloatArray(3 * channelSize)
+        val lut = BYTE_TO_FLOAT
+        val channel1 = channelSize
         val channel2 = 2 * channelSize
         for (i in 0 until channelSize) {
             val pixel = pixels[i]
-            floatBuffer.put(i, (pixel shr 16 and 0xFF) * inv255)
-            floatBuffer.put(channelSize + i, (pixel shr 8 and 0xFF) * inv255)
-            floatBuffer.put(channel2 + i, (pixel and 0xFF) * inv255)
+            inputFloats[i] = lut[(pixel ushr 16) and 0xFF]
+            inputFloats[channel1 + i] = lut[(pixel ushr 8) and 0xFF]
+            inputFloats[channel2 + i] = lut[pixel and 0xFF]
         }
+
+        val byteBuffer = ByteBuffer.allocateDirect(1 * 3 * channelSize * 4)
+            .order(ByteOrder.nativeOrder())
+        val floatBuffer = byteBuffer.asFloatBuffer()
+        floatBuffer.put(inputFloats)
         floatBuffer.rewind()
 
         return PreprocessedBitmap(
@@ -181,16 +190,20 @@ object YoloImagePreprocessor {
         val pixels = buffers.pixels
         checkNotNull(buffers.letterboxBitmap).getPixels(pixels, 0, targetWidth, 0, 0, targetWidth, targetHeight)
 
-        val floatBuffer = buffers.floatBuffer
-        floatBuffer.clear()
-        val inv255 = 1.0f / 255.0f
+        val inputFloats = buffers.inputFloatArray
+        val lut = BYTE_TO_FLOAT
+        val channel1 = channelSize
         val channel2 = 2 * channelSize
         for (i in 0 until channelSize) {
             val pixel = pixels[i]
-            floatBuffer.put(i, (pixel shr 16 and 0xFF) * inv255)
-            floatBuffer.put(channelSize + i, (pixel shr 8 and 0xFF) * inv255)
-            floatBuffer.put(channel2 + i, (pixel and 0xFF) * inv255)
+            inputFloats[i] = lut[(pixel ushr 16) and 0xFF]
+            inputFloats[channel1 + i] = lut[(pixel ushr 8) and 0xFF]
+            inputFloats[channel2 + i] = lut[pixel and 0xFF]
         }
+
+        val floatBuffer = buffers.floatBuffer
+        floatBuffer.clear()
+        floatBuffer.put(inputFloats)
         floatBuffer.rewind()
 
         return PreprocessedBitmap(floatBuffer, letterboxInfo)

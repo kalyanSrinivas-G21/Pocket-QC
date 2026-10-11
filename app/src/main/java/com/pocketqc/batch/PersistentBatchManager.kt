@@ -120,6 +120,8 @@ class PersistentBatchManager(
                         flaggedCount = obj.optInt("flaggedCount", 0),
                         requiredFillPercent = obj.optDouble("requiredFillPercent", 0.0).toFloat(),
                         averageDetectedFillPercent = obj.optDouble("averageDetectedFillPercent", 0.0).toFloat(),
+                        bottlePassCount = obj.optInt("bottlePassCount", 0),
+                        bottleFailCount = obj.optInt("bottleFailCount", 0),
                         qrPayload = obj.optString("qrPayload", "")
                     )
                 )
@@ -150,11 +152,25 @@ class PersistentBatchManager(
                     put("flaggedCount", b.flaggedCount)
                     put("requiredFillPercent", b.requiredFillPercent.toDouble())
                     put("averageDetectedFillPercent", b.averageDetectedFillPercent.toDouble())
+                    put("bottlePassCount", b.bottlePassCount)
+                    put("bottleFailCount", b.bottleFailCount)
                     put("qrPayload", b.qrPayload)
                 }
                 jsonArray.put(obj)
             }
-            storageFile.writeText(jsonArray.toString())
+            val parent = storageFile.parentFile ?: return@runCatching
+            val temp = File.createTempFile("batches_tmp_", ".tmp", parent)
+            java.io.FileOutputStream(temp).use { fos ->
+                java.io.OutputStreamWriter(fos, java.nio.charset.StandardCharsets.UTF_8).use { writer ->
+                    writer.write(jsonArray.toString())
+                    writer.flush()
+                }
+                runCatching { fos.fd.sync() }
+            }
+            if (!temp.renameTo(storageFile)) {
+                temp.copyTo(storageFile, overwrite = true)
+                temp.delete()
+            }
         }
     }
 

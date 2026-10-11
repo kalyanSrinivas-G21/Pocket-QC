@@ -124,10 +124,10 @@ class InspectionNodeCoordinator(
                 val regReq = RegisterRequest(
                     deviceId = persistentDeviceId,
                     deviceName = stationName,
-                    supportedInspectionModes = listOf("2D_DEFECT_SORT"),
+                    supportedInspectionModes = listOf("2D_DEFECT_SORT", "VOLUME_CHECK_3D", "UV_AFLATOXIN"),
                     modelId = "biscuits_final",
                     modelVersion = "1.0",
-                    capabilities = listOf("YOLOv8n", "CentroidTracker", "CameraX")
+                    capabilities = listOf("YOLOv8n", "CentroidTracker", "CameraX", "VolumeAnalyzer")
                 )
                 val regResult = nodeClient.register(regReq)
                 if (regResult.isFailure) {

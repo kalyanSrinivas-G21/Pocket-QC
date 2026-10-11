@@ -187,8 +187,8 @@ class InspectionServerManager(
 
     @Synchronized
     fun createBatch(
-        productName: String = "Biscuit Conveyor Lot",
-        inspectionMode: String = "2D_DEFECT_SORT"
+        productName: String = "Combined QC Lot #101",
+        inspectionMode: String = "COMBINED_INSPECTION"
     ): DistributedBatch {
         val newId = BatchIdGenerator.generate(prefix = "PQ-DIST")
         val batch = DistributedBatch(
@@ -246,9 +246,14 @@ class InspectionServerManager(
         val isApproved = (total > 0 && defectRate <= 0.12f)
         val status = if (isApproved) BatchStatus.APPROVED else BatchStatus.REJECTED
 
-        val qrType = when (stopped.inspectionMode) {
-            "UV_AFLATOXIN" -> "UV"
-            "VOLUME_CHECK_3D" -> "3D"
+        val isCombined = stopped.inspectionMode.contains("COMBINED", ignoreCase = true) ||
+                stopped.inspectionMode == "MULTI_STATION_QC" ||
+                (summary.count2dTotal > 0 && summary.count3dTotal > 0)
+
+        val qrType = when {
+            isCombined -> "COMBINED"
+            stopped.inspectionMode == "UV_AFLATOXIN" -> "UV"
+            stopped.inspectionMode == "VOLUME_CHECK_3D" -> "3D"
             else -> "2D"
         }
 
@@ -263,9 +268,9 @@ class InspectionServerManager(
             result = if (isApproved) "PASS" else "REJECT"
         )
 
-        val coreMode = when (stopped.inspectionMode) {
-            "UV_AFLATOXIN" -> InspectionMode.UV_AFLATOXIN
-            "VOLUME_CHECK_3D" -> InspectionMode.VOLUME_CHECK_3D
+        val coreMode = when {
+            stopped.inspectionMode == "UV_AFLATOXIN" -> InspectionMode.UV_AFLATOXIN
+            stopped.inspectionMode == "VOLUME_CHECK_3D" -> InspectionMode.VOLUME_CHECK_3D
             else -> InspectionMode.DEFECT_SORT_2D
         }
 
@@ -284,9 +289,11 @@ class InspectionServerManager(
             brokenCount = summary.brokenCount,
             fractureCount = summary.fractureCount,
             intactCount = summary.intactCount,
-            flaggedCount = if (stopped.inspectionMode == "UV_AFLATOXIN") failed else 0,
-            requiredFillPercent = if (stopped.inspectionMode == "VOLUME_CHECK_3D") 80f else 0f,
-            averageDetectedFillPercent = if (stopped.inspectionMode == "VOLUME_CHECK_3D") 80f else 0f,
+            flaggedCount = if (stopped.inspectionMode == "UV_AFLATOXIN") failed else summary.countUvDefect,
+            requiredFillPercent = if (summary.count3dTotal > 0 || stopped.inspectionMode == "VOLUME_CHECK_3D") 80f else 0f,
+            averageDetectedFillPercent = if (summary.count3dTotal > 0 || stopped.inspectionMode == "VOLUME_CHECK_3D") 80f else 0f,
+            bottlePassCount = summary.count3dPass,
+            bottleFailCount = summary.count3dDefect,
             qrPayload = qrPayload
         )
 

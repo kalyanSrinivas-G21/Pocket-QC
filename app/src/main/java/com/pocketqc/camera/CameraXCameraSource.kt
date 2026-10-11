@@ -388,6 +388,8 @@ class CameraXCameraSource(
         unbind()
         previewViewRef = null
         lifecycleOwnerRef = null
+        workerJob?.cancel()
+        workerJob = null
         if (!analysisExecutor.isShutdown) {
             analysisExecutor.shutdown()
         }

@@ -52,9 +52,13 @@ class Volume3dInspectionEngine(
         this.frameProvider = provider
     }
 
+    val canConfigure: Boolean
+        get() = _state.value.phase == Volume3dPhase.IDLE || _state.value.phase == Volume3dPhase.COMPLETED
+
     fun selectProfile(profile: ContainerProfile) {
-        if (_state.value.phase == Volume3dPhase.IDLE) {
+        if (canConfigure) {
             _state.value = _state.value.copy(
+                phase = Volume3dPhase.IDLE,
                 selectedProfile = profile,
                 requiredFillPercent = profile.targetFillPercent,
                 tolerancePercent = profile.tolerancePercent
@@ -66,9 +70,12 @@ class Volume3dInspectionEngine(
     }
 
     fun setRequiredFillLevel(level: Float) {
-        if (_state.value.phase == Volume3dPhase.IDLE) {
+        if (canConfigure) {
             val clamped = level.coerceIn(10f, 100f)
-            _state.value = _state.value.copy(requiredFillPercent = clamped)
+            _state.value = _state.value.copy(
+                phase = Volume3dPhase.IDLE,
+                requiredFillPercent = clamped
+            )
             if (volumeAnalyzer is RealGeometricFillAnalyzer) {
                 volumeAnalyzer.profile = volumeAnalyzer.profile.copy(targetFillPercent = clamped)
             }
@@ -76,9 +83,12 @@ class Volume3dInspectionEngine(
     }
 
     fun setTolerance(tolerance: Float) {
-        if (_state.value.phase == Volume3dPhase.IDLE) {
+        if (canConfigure) {
             val clamped = tolerance.coerceIn(0.5f, 15.0f)
-            _state.value = _state.value.copy(tolerancePercent = clamped)
+            _state.value = _state.value.copy(
+                phase = Volume3dPhase.IDLE,
+                tolerancePercent = clamped
+            )
             if (volumeAnalyzer is RealGeometricFillAnalyzer) {
                 volumeAnalyzer.profile = volumeAnalyzer.profile.copy(tolerancePercent = clamped)
             }
@@ -93,13 +103,14 @@ class Volume3dInspectionEngine(
     }
 
     fun setContainerWidthPercent(widthPercent: Float) {
-        if (_state.value.phase == Volume3dPhase.IDLE) {
+        if (canConfigure) {
             val clamped = widthPercent.coerceIn(20f, 85f)
             val left = (0.5f - (clamped / 200f)).coerceIn(0.05f, 0.45f)
             val right = (0.5f + (clamped / 200f)).coerceIn(0.55f, 0.95f)
             val updatedProfile = _state.value.selectedProfile.copy(containerWidthPercent = clamped)
             val updatedRoi = _state.value.calibrationRoi.copy(leftNormalizedX = left, rightNormalizedX = right)
             _state.value = _state.value.copy(
+                phase = Volume3dPhase.IDLE,
                 selectedProfile = updatedProfile,
                 calibrationRoi = updatedRoi
             )
@@ -108,6 +119,21 @@ class Volume3dInspectionEngine(
                 volumeAnalyzer.calibrationRoi = updatedRoi
             }
         }
+    }
+
+    fun resetToIdle() {
+        inspectionJob?.cancel()
+        val current = _state.value
+        _state.value = current.copy(
+            phase = Volume3dPhase.IDLE,
+            bottleIndex = 0,
+            totalInspected = 0,
+            passedCount = 0,
+            failedCount = 0,
+            inconclusiveCount = 0,
+            records = emptyList(),
+            latestResult = null
+        )
     }
 
     fun startBatch(

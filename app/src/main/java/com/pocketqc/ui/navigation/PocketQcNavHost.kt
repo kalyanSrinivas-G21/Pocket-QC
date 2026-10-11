@@ -114,17 +114,6 @@ fun PocketQcNavHost(
         }
     }
 
-    LaunchedEffect(effectiveInferenceEngine) {
-        if (!effectiveInferenceEngine.isInitialized) {
-            val result = effectiveInferenceEngine.initialize()
-            if (result.isFailure) {
-                val err = result.exceptionOrNull()?.message ?: "2D Inspection initialization failed"
-                Log.e("PocketQcNavHost", "2D Defect Sort initialization failed: $err")
-                npuInitError = "2D Inspection Error: $err"
-            }
-        }
-    }
-
     val effectiveSession: InspectionSession = remember(session, effectiveBatchManager, effectiveInferenceEngine) {
         session ?: DefaultInspectionSession(effectiveBatchManager, effectiveInferenceEngine)
     }
@@ -279,6 +268,17 @@ fun PocketQcNavHost(
 
         // Mode 1: 2D Defect Sort (Conveyor continuous batch)
         composable(Screen.Inspection2D.route) {
+            LaunchedEffect(effectiveInferenceEngine) {
+                if (!effectiveInferenceEngine.isInitialized) {
+                    val result = effectiveInferenceEngine.initialize()
+                    if (result.isFailure) {
+                        val err = result.exceptionOrNull()?.message ?: "2D Inspection initialization failed"
+                        Log.e("PocketQcNavHost", "2D Defect Sort initialization failed: $err")
+                        npuInitError = "2D Inspection Error: $err"
+                    }
+                }
+            }
+
             InspectionScreen2D(
                 session = effectiveSession,
                 cameraSource = effectiveCameraSource,
@@ -408,6 +408,17 @@ fun PocketQcNavHost(
 
         // Backward compatibility routes for existing tests
         composable(Screen.Inspection.route) {
+            LaunchedEffect(effectiveInferenceEngine) {
+                if (!effectiveInferenceEngine.isInitialized) {
+                    val result = effectiveInferenceEngine.initialize()
+                    if (result.isFailure) {
+                        val err = result.exceptionOrNull()?.message ?: "2D Inspection initialization failed"
+                        Log.e("PocketQcNavHost", "2D Defect Sort initialization failed: $err")
+                        npuInitError = "2D Inspection Error: $err"
+                    }
+                }
+            }
+
             InspectionScreen(
                 session = effectiveSession,
                 cameraSource = effectiveCameraSource,
@@ -504,6 +515,17 @@ fun PocketQcNavHost(
 
         // Mode B: Inspection Node Mode (Devices 2 & 3)
         composable(Screen.DistributedNode.route) {
+            LaunchedEffect(effectiveInferenceEngine) {
+                if (!effectiveInferenceEngine.isInitialized) {
+                    val result = effectiveInferenceEngine.initialize()
+                    if (result.isFailure) {
+                        val err = result.exceptionOrNull()?.message ?: "2D Inspection initialization failed"
+                        Log.e("PocketQcNavHost", "2D Defect Sort initialization failed: $err")
+                        npuInitError = "2D Inspection Error: $err"
+                    }
+                }
+            }
+
             DistributedNodeScreen(
                 coordinator = nodeCoordinator,
                 cameraSource = effectiveCameraSource,

@@ -51,6 +51,9 @@ class YoloPreallocatedBuffers(
     // 4. Preallocated output array for ONNX tensor result
     val outputFloatArray: FloatArray = FloatArray(totalOutputSize)
 
+    // 4b. Preallocated input float array for CHW planar tensor (3 * H * W floats)
+    val inputFloatArray: FloatArray = FloatArray(3 * channelSize)
+
     // 5. Letterbox Bitmap and Canvas (safe on JVM unit test where android framework may be stubbed)
     val letterboxBitmap: Bitmap? = runCatching {
         Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)

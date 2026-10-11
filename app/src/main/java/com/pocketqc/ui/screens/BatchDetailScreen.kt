@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -271,54 +272,106 @@ fun BatchDetailScreen(
                 .padding(16.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val isCombinedBatch = batch.qrPayload.contains("COMBINED") ||
+                        (batch.bottlePassCount + batch.bottleFailCount > 0 && (batch.intactCount + batch.brokenCount + batch.fractureCount > 0)) ||
+                        batch.productName.contains("Combined", ignoreCase = true)
+
+                val breakdownTitle = if (isCombinedBatch) {
+                    "MULTI-STATION COMBINED BREAKDOWN (2D + 3D)"
+                } else {
+                    "MODE BREAKDOWN (${batch.mode.titleLine1} ${batch.mode.titleLine2})"
+                }
+
                 Text(
-                    text = "MODE BREAKDOWN (${batch.mode.titleLine1} ${batch.mode.titleLine2})",
+                    text = breakdownTitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = BrandBlueLight,
                     fontWeight = FontWeight.Bold
                 )
 
-                when (batch.mode) {
-                    InspectionMode.DEFECT_SORT_2D -> {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Intact (Passed):", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.intactCount}", color = StatusPass, fontWeight = FontWeight.Bold)
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Broken Edges:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.brokenCount}", color = StatusFail, fontWeight = FontWeight.Bold)
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Fracture Lines:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.fractureCount}", color = StatusFail, fontWeight = FontWeight.Bold)
-                        }
+                if (isCombinedBatch) {
+                    Text(
+                        text = "Station 1: 2D Biscuit Defect Sort",
+                        color = BrandBlueLight,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Intact (Passed):", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${batch.intactCount}", color = StatusPass, fontWeight = FontWeight.Bold)
                     }
-                    InspectionMode.UV_AFLATOXIN -> {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Passed Samples:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.passCount}", color = StatusPass, fontWeight = FontWeight.Bold)
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Fluorescence Flagged:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.flaggedCount}", color = StatusFail, fontWeight = FontWeight.Bold)
-                        }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Broken Edges:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${batch.brokenCount}", color = StatusFail, fontWeight = FontWeight.Bold)
                     }
-                    InspectionMode.VOLUME_CHECK_3D -> {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Target Fill Level:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.requiredFillPercent.toInt()}%", color = BrandBlueLight, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Fracture Lines:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${batch.fractureCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                    }
+
+                    Divider(color = CardSurfaceBorder, thickness = 1.dp)
+
+                    Text(
+                        text = "Station 2: 3D Bottle Volume & Fill Check",
+                        color = Color(0xFF26B6FF),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Target Fill Level:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${if (batch.requiredFillPercent > 0) batch.requiredFillPercent.toInt() else 80}%", color = BrandBlueLight, fontWeight = FontWeight.Bold)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "In-Tolerance Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${batch.bottlePassCount}", color = StatusPass, fontWeight = FontWeight.Bold)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(text = "Out-of-Tolerance Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = "${batch.bottleFailCount}", color = if (batch.bottleFailCount > 0) StatusFail else TextGrey, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    when (batch.mode) {
+                        InspectionMode.DEFECT_SORT_2D -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Intact (Passed):", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.intactCount}", color = StatusPass, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Broken Edges:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.brokenCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Fracture Lines:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.fractureCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                            }
                         }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Avg Detected Fill:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = String.format(Locale.US, "%.1f%%", batch.averageDetectedFillPercent), color = TextWhite, fontWeight = FontWeight.Bold)
+                        InspectionMode.UV_AFLATOXIN -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Passed Samples:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.passCount}", color = StatusPass, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Fluorescence Flagged:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.flaggedCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                            }
                         }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Passed Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.passCount}", color = StatusPass, fontWeight = FontWeight.Bold)
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = "Rejected Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "${batch.failCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                        InspectionMode.VOLUME_CHECK_3D -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Target Fill Level:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.requiredFillPercent.toInt()}%", color = BrandBlueLight, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Avg Detected Fill:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = String.format(Locale.US, "%.1f%%", batch.averageDetectedFillPercent), color = TextWhite, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Passed Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.passCount}", color = StatusPass, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = "Rejected Bottles:", color = TextWhite, style = MaterialTheme.typography.bodyMedium)
+                                Text(text = "${batch.failCount}", color = StatusFail, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
