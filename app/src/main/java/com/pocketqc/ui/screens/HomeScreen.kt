@@ -64,6 +64,8 @@ fun HomeScreen(
     onNavigateHistory: () -> Unit = onViewPassport,
     onNavigateSettings: () -> Unit = {},
     onNavigateLab: () -> Unit = {},
+    onNavigateAutoLabel: () -> Unit = {},
+    onNavigateDistributed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedMode by remember { mutableStateOf(InspectionMode.DEFECT_SORT_2D) }
@@ -206,6 +208,22 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Feature Action Card 0: Local Distributed Inspection (Multi-Phone Mesh)
+        DashboardActionCard(
+            icon = {
+                Text(
+                    text = "📡",
+                    fontSize = 18.sp
+                )
+            },
+            iconBgColor = Color(0xFF1B2E3D),
+            title = "Local Distributed Inspection",
+            subtitle = "3-phone offline mesh: Server hub & inspection nodes",
+            onClick = { onNavigateDistributed() }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         // Feature Action Card 1: Batch History & Passports
         DashboardActionCard(
             icon = {
@@ -238,6 +256,22 @@ fun HomeScreen(
             title = "Experimental Model Lab",
             subtitle = "On-device active learning & fine-tuning playground",
             onClick = { onNavigateLab() }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Feature Action Card 3: Experimental Auto-Labeling PoC (Debug Only)
+        DashboardActionCard(
+            icon = {
+                Text(
+                    text = "🏷️",
+                    fontSize = 18.sp
+                )
+            },
+            iconBgColor = Color(0xFF132A1C),
+            title = "Auto-Labeling PoC (Debug)",
+            subtitle = "Automated biscuit bounding boxes, review & YOLO export",
+            onClick = { onNavigateAutoLabel() }
         )
 
         Spacer(modifier = Modifier.height(24.dp))

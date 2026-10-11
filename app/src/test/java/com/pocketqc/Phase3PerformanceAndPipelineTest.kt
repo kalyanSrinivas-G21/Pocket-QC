@@ -192,8 +192,8 @@ class Phase3PerformanceAndPipelineTest {
         }.join()
 
         // Allow worker to drain final frame
-        delay(100)
-        workerJob.cancel()
+        signalChannel.close()
+        workerJob.join()
 
         // Clean up any lingering pending frame
         pendingHolder.getAndSet(null)?.let { lingering ->

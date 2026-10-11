@@ -18,4 +18,10 @@ sealed class Screen(val route: String) {
     }
     data object Settings : Screen("settings")
     data object ExperimentalLab : Screen("experimental_lab")
+    data object AutoLabelPoC : Screen("experimental_autolabel")
+
+    // Local Distributed Inspection Routes
+    data object DistributedLanding : Screen("distributed_landing")
+    data object DistributedServer : Screen("distributed_server")
+    data object DistributedNode : Screen("distributed_node")
 }

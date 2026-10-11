@@ -312,6 +312,52 @@ fun Volume3dInspectionScreen(
                     }
                 }
             }
+
+            // Custom Container Width Adjustment
+            if (state.selectedProfile.geometryType == ContainerGeometryType.CUSTOM_CONTAINER) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "CONTAINER WIDTH: ${state.selectedProfile.containerWidthPercent.toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF26B6FF),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Adjust reticle scan width to fit custom bottle",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextGrey,
+                            fontSize = 10.sp
+                        )
+                    }
+
+                    if (!isRunning) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    volumeEngine.setContainerWidthPercent(state.selectedProfile.containerWidthPercent - 5f)
+                                },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Text(text = "−", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = {
+                                    volumeEngine.setContainerWidthPercent(state.selectedProfile.containerWidthPercent + 5f)
+                                },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Text(text = "+", color = TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 4. Real CameraX Viewport with Container Alignment Reticle

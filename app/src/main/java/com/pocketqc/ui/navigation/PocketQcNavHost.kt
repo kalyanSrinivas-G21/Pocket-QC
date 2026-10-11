@@ -42,6 +42,9 @@ import com.pocketqc.ui.components.InspectionMode
 import com.pocketqc.ui.screens.BatchDetailScreen
 import com.pocketqc.ui.screens.BatchHistoryScreen
 import com.pocketqc.ui.screens.BatchPassportScreen
+import com.pocketqc.ui.screens.DistributedLandingScreen
+import com.pocketqc.ui.screens.DistributedNodeScreen
+import com.pocketqc.ui.screens.DistributedServerScreen
 import com.pocketqc.ui.screens.HomeScreen
 import com.pocketqc.ui.screens.InspectionScreen
 import com.pocketqc.ui.screens.InspectionScreen2D
@@ -49,6 +52,9 @@ import com.pocketqc.ui.screens.ResultsScreen
 import com.pocketqc.ui.screens.SettingsScreen
 import com.pocketqc.ui.screens.UvInspectionScreen
 import com.pocketqc.ui.screens.Volume3dInspectionScreen
+import com.pocketqc.distributed.client.InspectionNodeCoordinator
+import com.pocketqc.distributed.server.InspectionServerManager
+import com.pocketqc.distributed.store.PersistentDistributedStore
 import com.pocketqc.uv.MockUvLightController
 import com.pocketqc.uv.UsbSerialUvLightController
 import com.pocketqc.uv.UvInspectionEngine
@@ -98,7 +104,7 @@ fun PocketQcNavHost(
             context = context,
             modelConfig = ModelConfig.BISCUITS_FINAL,
             confidenceThreshold = currentSettings.confidenceThreshold,
-            targetBackend = HardwareBackend.QNN_NPU
+            targetBackend = HardwareBackend.AUTO
         )
     }
 
@@ -112,9 +118,9 @@ fun PocketQcNavHost(
         if (!effectiveInferenceEngine.isInitialized) {
             val result = effectiveInferenceEngine.initialize()
             if (result.isFailure) {
-                val err = result.exceptionOrNull()?.message ?: "2D Inspection NPU initialization failed"
-                Log.e("PocketQcNavHost", "2D Defect Sort NPU initialization failed: $err")
-                npuInitError = "2D Inspection NPU Error: $err"
+                val err = result.exceptionOrNull()?.message ?: "2D Inspection initialization failed"
+                Log.e("PocketQcNavHost", "2D Defect Sort initialization failed: $err")
+                npuInitError = "2D Inspection Error: $err"
             }
         }
     }
@@ -133,12 +139,12 @@ fun PocketQcNavHost(
         }
     }
 
-    // Specialized Inspection Engines: Real UV Aflatoxin Model & Mandatory QNN NPU
+    // Specialized Inspection Engines: Real UV Aflatoxin Model with AUTO hardware fallback
     val uvInferenceEngine: InferenceEngine = remember {
         YoloInferenceEngine(
             context = context,
             modelConfig = ModelConfig.AFLATOXIN,
-            targetBackend = HardwareBackend.QNN_NPU
+            targetBackend = HardwareBackend.AUTO
         )
     }
 
@@ -219,6 +225,22 @@ fun PocketQcNavHost(
         }
     }
 
+    val distributedStore = remember {
+        PersistentDistributedStore(context)
+    }
+    val serverManager = remember(distributedStore, effectiveBatchManager) {
+        InspectionServerManager(distributedStore, batchManager = effectiveBatchManager)
+    }
+    val nodeCoordinator = remember {
+        InspectionNodeCoordinator(context)
+    }
+
+    DisposableEffect(serverManager) {
+        onDispose {
+            serverManager.stopServer()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -245,6 +267,12 @@ fun PocketQcNavHost(
                 },
                 onNavigateLab = {
                     navController.navigate(Screen.ExperimentalLab.route)
+                },
+                onNavigateAutoLabel = {
+                    navController.navigate(Screen.AutoLabelPoC.route)
+                },
+                onNavigateDistributed = {
+                    navController.navigate(Screen.DistributedLanding.route)
                 }
             )
         }
@@ -369,6 +397,15 @@ fun PocketQcNavHost(
             )
         }
 
+        // Experimental Auto-Labeling PoC (Dataset Creation & Review)
+        composable(Screen.AutoLabelPoC.route) {
+            com.pocketqc.autolabel.ui.AutoLabelPoCScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         // Backward compatibility routes for existing tests
         composable(Screen.Inspection.route) {
             InspectionScreen(
@@ -430,6 +467,52 @@ fun PocketQcNavHost(
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        // Local Distributed Inspection Landing
+        composable(Screen.DistributedLanding.route) {
+            DistributedLandingScreen(
+                onSelectServerMode = {
+                    navController.navigate(Screen.DistributedServer.route)
+                },
+                onSelectNodeMode = {
+                    navController.navigate(Screen.DistributedNode.route)
+                },
+                onSelectStandaloneMode = {
+                    navController.navigate(Screen.Inspection2D.route)
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Mode A: Server Mode Dashboard (Device 1)
+        composable(Screen.DistributedServer.route) {
+            DistributedServerScreen(
+                serverManager = serverManager,
+                onViewBatchDetail = { batchId ->
+                    navController.navigate(Screen.BatchDetail.createRoute(batchId))
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Mode B: Inspection Node Mode (Devices 2 & 3)
+        composable(Screen.DistributedNode.route) {
+            DistributedNodeScreen(
+                coordinator = nodeCoordinator,
+                cameraSource = effectiveCameraSource,
+                session = effectiveSession,
+                cameraSourceUv = uvCameraSource,
+                uvEngine = uvEngine,
+                volumeEngine = volumeEngine,
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

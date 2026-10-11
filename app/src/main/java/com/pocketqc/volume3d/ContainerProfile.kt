@@ -25,7 +25,8 @@ data class ContainerProfile(
     val referenceHeightMm: Float,   // Container base to neck/top reference height in mm
     val targetFillPercent: Float = 80.0f,
     val tolerancePercent: Float = 3.0f,
-    val innerRadiusMm: Float? = null // For uniform cylinder volume calculation (pi * r^2 * h)
+    val innerRadiusMm: Float? = null, // For uniform cylinder volume calculation (pi * r^2 * h)
+    val containerWidthPercent: Float = 50.0f // Screen width fraction percentage for ROI reticle [20%..80%]
 ) {
     /**
      * Calculates estimated liquid volume in mL from measured fill height in mm.

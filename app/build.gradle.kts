@@ -73,6 +73,9 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
+    implementation(libs.nanohttpd)
+    implementation(libs.nanohttpd.websocket)
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.org.json)

@@ -92,6 +92,24 @@ class Volume3dInspectionEngine(
         }
     }
 
+    fun setContainerWidthPercent(widthPercent: Float) {
+        if (_state.value.phase == Volume3dPhase.IDLE) {
+            val clamped = widthPercent.coerceIn(20f, 85f)
+            val left = (0.5f - (clamped / 200f)).coerceIn(0.05f, 0.45f)
+            val right = (0.5f + (clamped / 200f)).coerceIn(0.55f, 0.95f)
+            val updatedProfile = _state.value.selectedProfile.copy(containerWidthPercent = clamped)
+            val updatedRoi = _state.value.calibrationRoi.copy(leftNormalizedX = left, rightNormalizedX = right)
+            _state.value = _state.value.copy(
+                selectedProfile = updatedProfile,
+                calibrationRoi = updatedRoi
+            )
+            if (volumeAnalyzer is RealGeometricFillAnalyzer) {
+                volumeAnalyzer.profile = updatedProfile
+                volumeAnalyzer.calibrationRoi = updatedRoi
+            }
+        }
+    }
+
     fun startBatch(
         requiredFillPercent: Float = _state.value.requiredFillPercent,
         productName: String = _state.value.selectedProfile.name
