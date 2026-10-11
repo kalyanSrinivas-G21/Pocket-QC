@@ -10,3 +10,6 @@
 local.properties
 /app/build
 *.hprof
+screen_*.png
+/runs/
+*.apk
